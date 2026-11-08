@@ -10,37 +10,44 @@ interface WorkoutActionsProps {
 function WorkoutActions({ workout }: WorkoutActionsProps) {
   const [message, setMessage] = useState('');
 
+  function showMessage(text: string) {
+    setMessage(text);
+    setTimeout(() => {
+      setMessage('');
+    }, 2500);
+  }
+
   function addToPlan() {
     const savedPlan: Workout[] = JSON.parse(localStorage.getItem('todayPlan') || '[]');
 
     if (savedPlan.some((item) => item.id === workout.id)) {
-      setMessage('This workout is already in your plan.');
+      showMessage('This workout is already in your plan.');
       return;
     }
 
     if (savedPlan.length >= 5) {
-      setMessage('Your plan already has five workouts.');
+      showMessage('Your plan already has five workouts.');
       return;
     }
 
     savedPlan.push(workout);
     localStorage.setItem('todayPlan', JSON.stringify(savedPlan));
     window.dispatchEvent(new Event('fitlog-updated'));
-    setMessage("Added to today's plan.");
+    showMessage("Added to today's plan.");
   }
 
   function saveForLater() {
     const savedWorkouts: Workout[] = JSON.parse(localStorage.getItem('savedWorkouts') || '[]');
 
     if (savedWorkouts.some((item) => item.id === workout.id)) {
-      setMessage('This workout is already saved.');
+      showMessage('This workout is already saved.');
       return;
     }
 
     savedWorkouts.push(workout);
     localStorage.setItem('savedWorkouts', JSON.stringify(savedWorkouts));
     window.dispatchEvent(new Event('fitlog-updated'));
-    setMessage('Saved for later.');
+    showMessage('Saved for later.');
   }
 
   return (
@@ -60,9 +67,10 @@ function WorkoutActions({ workout }: WorkoutActionsProps) {
         </button>
       </div>
       {message && (
-        <p role="status" className="mt-3 text-xs text-[#C2F800]">
+        <div role="status" className="fixed right-5 top-5 z-50 flex items-center gap-2 rounded-lg border border-[#30333A] bg-[#15161B] px-4 py-3 text-xs text-white shadow-xl">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C2F800] text-[10px] font-bold text-[#11130C]">✓</span>
           {message}
-        </p>
+        </div>
       )}
     </div>
   );

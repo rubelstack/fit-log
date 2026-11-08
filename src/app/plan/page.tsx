@@ -13,7 +13,6 @@ function PlanPage() {
   const [sortBy, setSortBy] = useState('duration');
   const [completedWorkouts, setCompletedWorkouts] = useState<number[]>([]);
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const savedPlan: Workout[] = JSON.parse(localStorage.getItem('todayPlan') || '[]');
@@ -21,8 +20,14 @@ function PlanPage() {
 
     setPlan(savedPlan);
     setSaved(savedWorkouts);
-    setLoading(false);
   }, []);
+
+  function showMessage(text: string) {
+    setMessage(text);
+    setTimeout(() => {
+      setMessage('');
+    }, 2500);
+  }
 
   let workouts = plan;
   if (activeTab === 'saved') {
@@ -52,12 +57,12 @@ function PlanPage() {
       const newPlan = plan.filter((workout) => workout.id !== id);
       setPlan(newPlan);
       localStorage.setItem('todayPlan', JSON.stringify(newPlan));
-      setMessage('Workout removed from today\'s plan.');
+      showMessage('Workout removed from today\'s plan.');
     } else {
       const newSaved = saved.filter((workout) => workout.id !== id);
       setSaved(newSaved);
       localStorage.setItem('savedWorkouts', JSON.stringify(newSaved));
-      setMessage('Workout removed from saved.');
+      showMessage('Workout removed from saved.');
     }
 
     setCompletedWorkouts(completedWorkouts.filter((workoutId) => workoutId !== id));
@@ -67,18 +72,18 @@ function PlanPage() {
   function markAsDone(id: number) {
     if (!completedWorkouts.includes(id)) {
       setCompletedWorkouts([...completedWorkouts, id]);
-      setMessage('Workout marked as done.');
+      showMessage('Workout marked as done.');
     }
   }
 
   function addSavedWorkout(workout: Workout) {
     if (plan.some((item) => item.id === workout.id)) {
-      setMessage('This workout is already in today\'s plan.');
+      showMessage('This workout is already in today\'s plan.');
       return;
     }
 
     if (plan.length >= 5) {
-      setMessage('Your plan already has five workouts.');
+      showMessage('Your plan already has five workouts.');
       return;
     }
 
@@ -86,7 +91,7 @@ function PlanPage() {
     setPlan(newPlan);
     localStorage.setItem('todayPlan', JSON.stringify(newPlan));
     window.dispatchEvent(new Event('fitlog-updated'));
-    setMessage("Added to today's plan.");
+    showMessage("Added to today's plan.");
   }
 
   return (
@@ -149,11 +154,7 @@ function PlanPage() {
             </div>
           </div>
 
-          {loading ? (
-            <div className="mt-4 flex min-h-[225px] items-center justify-center rounded-xl border border-[#24262D] bg-[#0F1015] text-sm text-[#858994]">
-              Loading workouts...
-            </div>
-          ) : sortedWorkouts.length === 0 ? (
+          {sortedWorkouts.length === 0 ? (
             <div className="mt-4 flex min-h-[225px] flex-col items-center justify-center rounded-xl border border-dashed border-[#24262D] bg-[#0F1015] px-5 text-center">
               <h2 className="text-sm font-extrabold uppercase tracking-wide">
                 Nothing here yet
@@ -235,7 +236,8 @@ function PlanPage() {
           )}
 
           {message && (
-            <div role="status" className="fixed bottom-5 right-5 rounded-lg border border-[#30333A] bg-[#15161B] px-4 py-3 text-xs text-[#C2F800]">
+            <div role="status" className="fixed right-5 top-5 z-50 flex items-center gap-2 rounded-lg border border-[#30333A] bg-[#15161B] px-4 py-3 text-xs text-white shadow-xl">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C2F800] text-[10px] font-bold text-[#11130C]">✓</span>
               {message}
             </div>
           )}

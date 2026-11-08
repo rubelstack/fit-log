@@ -1,14 +1,11 @@
-import { use } from 'react';
 import type { Workout } from '@/lib/workouts';
 import WorkoutCard from './WorkoutCard';
 
 interface WorkoutCardsProps {
-  workoutPromise: Promise<Workout[]>;
+  workouts: Workout[];
 }
 
-function WorkoutCards({ workoutPromise }: WorkoutCardsProps) {
-  const workouts = use(workoutPromise);
-
+function WorkoutCards({ workouts }: WorkoutCardsProps) {
   return (
     <section id="library" className="mx-auto mt-14 max-w-[1120px] scroll-mt-8">
       <div className="mb-6">
