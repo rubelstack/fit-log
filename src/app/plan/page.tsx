@@ -76,24 +76,6 @@ function PlanPage() {
     }
   }
 
-  function addSavedWorkout(workout: Workout) {
-    if (plan.some((item) => item.id === workout.id)) {
-      showMessage('This workout is already in today\'s plan.');
-      return;
-    }
-
-    if (plan.length >= 5) {
-      showMessage('Your plan already has five workouts.');
-      return;
-    }
-
-    const newPlan = [...plan, workout];
-    setPlan(newPlan);
-    localStorage.setItem('todayPlan', JSON.stringify(newPlan));
-    window.dispatchEvent(new Event('fitlog-updated'));
-    showMessage("Added to today's plan.");
-  }
-
   return (
     <>
       <Nav activePage="plan" />
@@ -160,7 +142,9 @@ function PlanPage() {
                 Nothing here yet
               </h2>
               <p className="mt-2 max-w-[360px] text-[10px] leading-5 text-[#858994]">
-                Browse the library and add a lift to get today moving.
+                {activeTab === 'plan'
+                  ? 'Browse the library and add a lift to get today moving.'
+                  : 'Save a workout from its details page to find it here later.'}
               </p>
               <Link
                 href="/"
@@ -207,19 +191,12 @@ function PlanPage() {
                     >
                       View Details
                     </Link>
-                    {activeTab === 'plan' ? (
+                    {activeTab === 'plan' && (
                       <button
                         onClick={() => markAsDone(workout.id)}
                         className="flex h-9 items-center rounded-full bg-[#C2F800] px-4 text-[10px] font-bold text-[#11130C] hover:bg-[#d2ff22]"
                       >
                         {completedWorkouts.includes(workout.id) ? 'Done' : '✓ Mark as Done'}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => addSavedWorkout(workout)}
-                        className="flex h-9 items-center rounded-full bg-[#C2F800] px-4 text-[10px] font-bold text-[#11130C] hover:bg-[#d2ff22]"
-                      >
-                        Add to Plan
                       </button>
                     )}
                     <button
