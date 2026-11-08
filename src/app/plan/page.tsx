@@ -1,7 +1,94 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import Nav from '@/components/shared/Nav';
+import type { Workout } from '@/lib/workouts';
 
 function PlanPage() {
+  const [plan, setPlan] = useState<Workout[]>([]);
+  const [saved, setSaved] = useState<Workout[]>([]);
+  const [activeTab, setActiveTab] = useState('plan');
+  const [sortBy, setSortBy] = useState('duration');
+  const [completedWorkouts, setCompletedWorkouts] = useState<number[]>([]);
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const savedPlan: Workout[] = JSON.parse(localStorage.getItem('todayPlan') || '[]');
+    const savedWorkouts: Workout[] = JSON.parse(localStorage.getItem('savedWorkouts') || '[]');
+
+    setPlan(savedPlan);
+    setSaved(savedWorkouts);
+    setLoading(false);
+  }, []);
+
+  let workouts = plan;
+  if (activeTab === 'saved') {
+    workouts = saved;
+  }
+
+  const sortedWorkouts = workouts.slice();
+
+  if (sortBy === 'duration') {
+    sortedWorkouts.sort((first, second) => first.duration - second.duration);
+  } else if (sortBy === 'calories') {
+    sortedWorkouts.sort((first, second) => first.caloriesBurned - second.caloriesBurned);
+  } else {
+    sortedWorkouts.sort((first, second) => first.rating - second.rating);
+  }
+
+  let totalMinutes = 0;
+  let totalCalories = 0;
+
+  plan.forEach((workout) => {
+    totalMinutes += workout.duration;
+    totalCalories += workout.caloriesBurned;
+  });
+
+  function removeWorkout(id: number) {
+    if (activeTab === 'plan') {
+      const newPlan = plan.filter((workout) => workout.id !== id);
+      setPlan(newPlan);
+      localStorage.setItem('todayPlan', JSON.stringify(newPlan));
+      setMessage('Workout removed from today\'s plan.');
+    } else {
+      const newSaved = saved.filter((workout) => workout.id !== id);
+      setSaved(newSaved);
+      localStorage.setItem('savedWorkouts', JSON.stringify(newSaved));
+      setMessage('Workout removed from saved.');
+    }
+
+    setCompletedWorkouts(completedWorkouts.filter((workoutId) => workoutId !== id));
+    window.dispatchEvent(new Event('fitlog-updated'));
+  }
+
+  function markAsDone(id: number) {
+    if (!completedWorkouts.includes(id)) {
+      setCompletedWorkouts([...completedWorkouts, id]);
+      setMessage('Workout marked as done.');
+    }
+  }
+
+  function addSavedWorkout(workout: Workout) {
+    if (plan.some((item) => item.id === workout.id)) {
+      setMessage('This workout is already in today\'s plan.');
+      return;
+    }
+
+    if (plan.length >= 5) {
+      setMessage('Your plan already has five workouts.');
+      return;
+    }
+
+    const newPlan = [...plan, workout];
+    setPlan(newPlan);
+    localStorage.setItem('todayPlan', JSON.stringify(newPlan));
+    window.dispatchEvent(new Event('fitlog-updated'));
+    setMessage("Added to today's plan.");
+  }
+
   return (
     <>
       <Nav activePage="plan" />
@@ -19,50 +106,139 @@ function PlanPage() {
           <div className="mt-6 grid grid-cols-1 rounded-xl border border-[#22242B] bg-[#15161B] px-5 py-4 sm:grid-cols-3 sm:px-6 sm:py-5">
             <div className="py-2 sm:border-r sm:border-[#24262D] sm:py-0">
               <p className="text-[10px] text-[#858994]">Exercises</p>
-              <p className="mt-1 text-3xl font-extrabold text-[#C2F800]">0</p>
+              <p className="mt-1 text-3xl font-extrabold text-[#C2F800]">{plan.length}</p>
             </div>
             <div className="border-t border-[#24262D] py-3 sm:border-0 sm:px-6 sm:py-0">
               <p className="text-[10px] text-[#858994]">Minutes</p>
-              <p className="mt-1 text-3xl font-extrabold">0</p>
+              <p className="mt-1 text-3xl font-extrabold">{totalMinutes}</p>
             </div>
             <div className="border-t border-[#24262D] py-3 sm:border-l sm:border-t-0 sm:border-[#24262D] sm:pl-6 sm:py-0">
               <p className="text-[10px] text-[#858994]">Calories</p>
-              <p className="mt-1 text-3xl font-extrabold">0</p>
+              <p className="mt-1 text-3xl font-extrabold">{totalCalories}</p>
             </div>
           </div>
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center rounded-lg border border-[#22242B] bg-[#15161B] p-1">
-              <button className="rounded-md bg-[#24262D] px-4 py-2 text-[10px] font-semibold text-white">
+              <button
+                onClick={() => setActiveTab('plan')}
+                className={`rounded-md px-4 py-2 text-[10px] font-medium ${activeTab === 'plan' ? 'bg-[#24262D] font-semibold text-white' : 'text-[#858994]'}`}
+              >
                 Today&apos;s Plan
               </button>
-              <button className="rounded-md px-4 py-2 text-[10px] font-medium text-[#858994]">
+              <button
+                onClick={() => setActiveTab('saved')}
+                className={`rounded-md px-4 py-2 text-[10px] font-medium ${activeTab === 'saved' ? 'bg-[#24262D] font-semibold text-white' : 'text-[#858994]'}`}
+              >
                 Saved
               </button>
             </div>
 
             <div className="flex items-center gap-2 text-[10px] text-[#858994]">
-              <span>Sort By</span>
-              <button className="flex items-center gap-3 rounded-lg border border-[#22242B] bg-[#15161B] px-3 py-2 text-[#D1D5DB]">
-                Duration <span aria-hidden="true">⌄</span>
-              </button>
+              <label htmlFor="sort-workouts">Sort By</label>
+              <select
+                id="sort-workouts"
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value)}
+                className="rounded-lg border border-[#22242B] bg-[#15161B] px-3 py-2 text-[#D1D5DB]"
+              >
+                <option value="duration">Duration</option>
+                <option value="calories">Calories</option>
+                <option value="rating">Rating</option>
+              </select>
             </div>
           </div>
 
-          <div className="mt-4 flex min-h-[225px] flex-col items-center justify-center rounded-xl border border-dashed border-[#24262D] bg-[#0F1015] px-5 text-center">
-            <h2 className="text-sm font-extrabold uppercase tracking-wide">
-              Nothing here yet
-            </h2>
-            <p className="mt-2 max-w-[360px] text-[10px] leading-5 text-[#858994]">
-              Browse the library and add a lift to get today moving.
-            </p>
-            <Link
-              href="/"
-              className="mt-4 flex h-9 items-center rounded-full bg-[#C2F800] px-5 text-[10px] font-bold text-[#11130C] hover:bg-[#d2ff22]"
-            >
-              Go to workouts
-            </Link>
-          </div>
+          {loading ? (
+            <div className="mt-4 flex min-h-[225px] items-center justify-center rounded-xl border border-[#24262D] bg-[#0F1015] text-sm text-[#858994]">
+              Loading workouts...
+            </div>
+          ) : sortedWorkouts.length === 0 ? (
+            <div className="mt-4 flex min-h-[225px] flex-col items-center justify-center rounded-xl border border-dashed border-[#24262D] bg-[#0F1015] px-5 text-center">
+              <h2 className="text-sm font-extrabold uppercase tracking-wide">
+                Nothing here yet
+              </h2>
+              <p className="mt-2 max-w-[360px] text-[10px] leading-5 text-[#858994]">
+                Browse the library and add a lift to get today moving.
+              </p>
+              <Link
+                href="/"
+                className="mt-4 flex h-9 items-center rounded-full bg-[#C2F800] px-5 text-[10px] font-bold text-[#11130C] hover:bg-[#d2ff22]"
+              >
+                Go to workouts
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {sortedWorkouts.map((workout) => (
+                <div
+                  key={workout.id}
+                  className="flex flex-col gap-4 rounded-xl border border-[#22242B] bg-[#15161B] p-3 md:flex-row md:items-center"
+                >
+                  <div className="relative h-[150px] w-full shrink-0 overflow-hidden rounded-lg bg-[#202228] md:h-[72px] md:w-[120px]">
+                    <Image
+                      src={workout.image}
+                      alt={workout.name}
+                      fill
+                      sizes="(min-width: 768px) 120px, 100vw"
+                      className="object-cover"
+                    />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <h2 className="truncate text-sm font-extrabold uppercase text-white">
+                      {workout.name}
+                    </h2>
+                    <p className="mt-1 truncate text-[11px] text-[#858994]">
+                      {workout.equipment}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-[#A0A3AD]">
+                      <span>◷ {workout.duration} min</span>
+                      <span>● {workout.caloriesBurned} kcal</span>
+                      <span>☆ {workout.rating.toFixed(1)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/workouts/${workout.id}`}
+                      className="flex h-9 items-center rounded-full border border-[#30333A] px-4 text-[10px] text-[#D1D5DB] hover:border-[#59606B]"
+                    >
+                      View Details
+                    </Link>
+                    {activeTab === 'plan' ? (
+                      <button
+                        onClick={() => markAsDone(workout.id)}
+                        className="flex h-9 items-center rounded-full bg-[#C2F800] px-4 text-[10px] font-bold text-[#11130C] hover:bg-[#d2ff22]"
+                      >
+                        {completedWorkouts.includes(workout.id) ? 'Done' : '✓ Mark as Done'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => addSavedWorkout(workout)}
+                        className="flex h-9 items-center rounded-full bg-[#C2F800] px-4 text-[10px] font-bold text-[#11130C] hover:bg-[#d2ff22]"
+                      >
+                        Add to Plan
+                      </button>
+                    )}
+                    <button
+                      onClick={() => removeWorkout(workout.id)}
+                      aria-label={`Remove ${workout.name}`}
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-lg text-[#858994] hover:bg-[#24262D] hover:text-white"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {message && (
+            <div role="status" className="fixed bottom-5 right-5 rounded-lg border border-[#30333A] bg-[#15161B] px-4 py-3 text-xs text-[#C2F800]">
+              {message}
+            </div>
+          )}
         </div>
       </div>
     </>
