@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import Nav from '@/components/shared/Nav';
+import WorkoutActions from '@/components/workouts/WorkoutActions';
 import { getWorkout } from '@/lib/workouts';
 
 type WorkoutPageProps = {
@@ -46,30 +47,34 @@ export default async function WorkoutPage({ params }: WorkoutPageProps) {
               {workout.description}
             </p>
 
-            <div className="mt-8 grid grid-cols-2 gap-4 border-y border-[#292C33] py-5 text-sm">
-              <div>
+            <div className="mt-8 rounded-xl border border-[#22242B] bg-[#191B22] px-4">
+              <div className="flex items-center justify-between border-b border-[#292C33] py-3">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#858994]">Equipment</p>
-                <p className="mt-1">{workout.equipment}</p>
+                <p className="text-xs text-[#D1D5DB]">{workout.equipment}</p>
               </div>
-              <div>
+              <div className="flex items-center justify-between border-b border-[#292C33] py-3">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#858994]">Difficulty</p>
-                <p className="mt-1">{workout.difficulty}</p>
+                <p className="text-xs text-[#D1D5DB]">{workout.difficulty}</p>
               </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#858994]">Sets / reps</p>
-                <p className="mt-1">{workout.sets} × {workout.reps}</p>
+              <div className="flex items-center justify-between border-b border-[#292C33] py-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#858994]">Sets</p>
+                <p className="text-xs text-[#D1D5DB]">{workout.sets}</p>
               </div>
-              <div>
+              <div className="flex items-center justify-between border-b border-[#292C33] py-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#858994]">Reps</p>
+                <p className="text-xs text-[#D1D5DB]">{workout.reps}</p>
+              </div>
+              <div className="flex items-center justify-between border-b border-[#292C33] py-3">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#858994]">Duration</p>
-                <p className="mt-1">{workout.duration} min</p>
+                <p className="text-xs text-[#D1D5DB]">{workout.duration} min</p>
               </div>
-              <div>
+              <div className="flex items-center justify-between border-b border-[#292C33] py-3">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#858994]">Calories</p>
-                <p className="mt-1">{workout.caloriesBurned} kcal</p>
+                <p className="text-xs text-[#D1D5DB]">{workout.caloriesBurned} kcal</p>
               </div>
-              <div>
+              <div className="flex items-center justify-between py-3">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#858994]">Rating</p>
-                <p className="mt-1">☆ {workout.rating.toFixed(1)}</p>
+                <p className="text-xs text-[#D1D5DB]">{workout.rating.toFixed(1)}</p>
               </div>
             </div>
 
@@ -86,6 +91,8 @@ export default async function WorkoutPage({ params }: WorkoutPageProps) {
                 </div>
               ))}
             </div>
+
+            <WorkoutActions workout={workout} />
           </div>
         </div>
       </div>
