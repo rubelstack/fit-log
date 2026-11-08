@@ -17,9 +17,17 @@ function PlanPage() {
   useEffect(() => {
     const savedPlan: Workout[] = JSON.parse(localStorage.getItem('todayPlan') || '[]');
     const savedWorkouts: Workout[] = JSON.parse(localStorage.getItem('savedWorkouts') || '[]');
+    const uniqueSavedWorkouts = savedWorkouts.filter((savedWorkout) => {
+      return !savedPlan.some((planWorkout) => planWorkout.id === savedWorkout.id);
+    });
+
+    if (uniqueSavedWorkouts.length !== savedWorkouts.length) {
+      localStorage.setItem('savedWorkouts', JSON.stringify(uniqueSavedWorkouts));
+      window.dispatchEvent(new Event('fitlog-updated'));
+    }
 
     setPlan(savedPlan);
-    setSaved(savedWorkouts);
+    setSaved(uniqueSavedWorkouts);
   }, []);
 
   function showMessage(text: string) {

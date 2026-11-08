@@ -19,9 +19,15 @@ function WorkoutActions({ workout }: WorkoutActionsProps) {
 
   function addToPlan() {
     const savedPlan: Workout[] = JSON.parse(localStorage.getItem('todayPlan') || '[]');
+    const savedWorkouts: Workout[] = JSON.parse(localStorage.getItem('savedWorkouts') || '[]');
 
     if (savedPlan.some((item) => item.id === workout.id)) {
       showMessage('This workout is already in your plan.');
+      return;
+    }
+
+    if (savedWorkouts.some((item) => item.id === workout.id)) {
+      showMessage('Remove this workout from Saved before adding it to your plan.');
       return;
     }
 
@@ -38,9 +44,15 @@ function WorkoutActions({ workout }: WorkoutActionsProps) {
 
   function saveForLater() {
     const savedWorkouts: Workout[] = JSON.parse(localStorage.getItem('savedWorkouts') || '[]');
+    const savedPlan: Workout[] = JSON.parse(localStorage.getItem('todayPlan') || '[]');
 
     if (savedWorkouts.some((item) => item.id === workout.id)) {
       showMessage('This workout is already saved.');
+      return;
+    }
+
+    if (savedPlan.some((item) => item.id === workout.id)) {
+      showMessage('Remove this workout from your plan before saving it.');
       return;
     }
 
