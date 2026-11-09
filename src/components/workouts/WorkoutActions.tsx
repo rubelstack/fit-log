@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Workout } from '@/lib/workouts';
 
 interface WorkoutActionsProps {
@@ -9,6 +9,18 @@ interface WorkoutActionsProps {
 
 function WorkoutActions({ workout }: WorkoutActionsProps) {
   const [message, setMessage] = useState('');
+  const [planCount, setPlanCount] = useState(0);
+
+  useEffect(() => {
+    function updatePlanCount() {
+      const plan: Workout[] = JSON.parse(localStorage.getItem('todayPlan') || '[]');
+      setPlanCount(plan.length);
+    }
+
+    updatePlanCount();
+    window.addEventListener('fitlog-updated', updatePlanCount);
+    return () => window.removeEventListener('fitlog-updated', updatePlanCount);
+  }, []);
 
   function showMessage(text: string) {
     setMessage(text);
@@ -38,6 +50,7 @@ function WorkoutActions({ workout }: WorkoutActionsProps) {
 
     savedPlan.push(workout);
     localStorage.setItem('todayPlan', JSON.stringify(savedPlan));
+    setPlanCount(savedPlan.length);
     window.dispatchEvent(new Event('fitlog-updated'));
     showMessage("Added to today's plan.");
   }
@@ -67,7 +80,8 @@ function WorkoutActions({ workout }: WorkoutActionsProps) {
       <div className="flex flex-wrap gap-3">
         <button
           onClick={addToPlan}
-          className="flex h-10 items-center gap-2 rounded-lg bg-[#C2F800] px-5 text-xs font-bold text-[#11130C] hover:bg-[#d2ff22]"
+          disabled={planCount >= 5}
+          className="flex h-10 items-center gap-2 rounded-lg bg-[#C2F800] px-5 text-xs font-bold text-[#11130C] hover:bg-[#d2ff22] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Add to today&apos;s plan
         </button>
